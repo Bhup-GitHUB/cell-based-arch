@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: router
+  namespace: cells
+  labels:
+    app: router
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: router
+  template:
+    metadata:
+      labels:
+        app: router
+    spec:
+      containers:
+        - name: router
+          image: cell-based-arch/router:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CELLS
+              value: "cell-1=http://cell1-app:9000,cell-2=http://cell2-app:9000,cell-3=http://cell3-app:9000"
+            - name: HEALTH_POLL_INTERVAL
+              value: "2s"
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "32Mi"
+            limits:
+              cpu: "500m"
+              memory: "64Mi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: router
+  namespace: cells
+  labels:
+    app: router
+spec:
+  type: NodePort
+  selector:
+    app: router
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
