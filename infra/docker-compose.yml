@@ -1,6 +1,5 @@
 services:
 
-  # ── Router ────────────────────────────────────────────────────────────────
   router:
     build:
       context: ..
@@ -16,7 +15,6 @@ services:
       - cell2-app
       - cell3-app
 
-  # ── Cell 1 ────────────────────────────────────────────────────────────────
   cell1-app:
     build:
       context: ..
@@ -47,7 +45,6 @@ services:
     volumes:
       - cell1-db-data:/var/lib/postgresql/data
 
-  # ── Cell 2 ────────────────────────────────────────────────────────────────
   cell2-app:
     build:
       context: ..
@@ -78,7 +75,6 @@ services:
     volumes:
       - cell2-db-data:/var/lib/postgresql/data
 
-  # ── Cell 3 ────────────────────────────────────────────────────────────────
   cell3-app:
     build:
       context: ..
