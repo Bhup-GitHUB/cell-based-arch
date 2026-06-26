@@ -54,13 +54,16 @@ func DefaultCells() []CellConfig {
 	}
 }
 
+func composeBase() []string {
+	if exec.Command("docker", "compose", "version").Run() == nil {
+		return []string{"docker", "compose"}
+	}
+	return []string{"docker-compose"}
+}
+
 func composeUp(ctx context.Context, composeFile, service string, extraEnv []string) error {
-	cmd := exec.CommandContext(ctx,
-		"docker", "compose",
-		"-f", composeFile,
-		"up", "-d", "--no-deps", "--build",
-		service,
-	)
+	args := append(composeBase(), "-f", composeFile, "up", "-d", "--no-deps", "--build", service)
+	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	cmd.Env = append(os.Environ(), extraEnv...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
