@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+
+# ── Build stage ──────────────────────────────────────────────────────────────
+FROM golang:1.25 AS builder
+
+WORKDIR /src
+
+# Cache dependencies before copying the full source
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the rest of the module and build a static binary
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/router ./cmd/router
+
+# ── Runtime stage ─────────────────────────────────────────────────────────────
+FROM gcr.io/distroless/static-debian12:nonroot
+
+COPY --from=builder /out/router /router
+
+EXPOSE 8080
+
+ENTRYPOINT ["/router"]

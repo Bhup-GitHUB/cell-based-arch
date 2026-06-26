@@ -1,0 +1,115 @@
+services:
+
+  # ── Router ────────────────────────────────────────────────────────────────
+  router:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.router
+    ports:
+      - "18080:8080"
+    environment:
+      CELLS: "cell-1=http://cell1-app:9000,cell-2=http://cell2-app:9000,cell-3=http://cell3-app:9000"
+      HEALTH_POLL_INTERVAL: "2s"
+      PORT: "8080"
+    depends_on:
+      - cell1-app
+      - cell2-app
+      - cell3-app
+
+  # ── Cell 1 ────────────────────────────────────────────────────────────────
+  cell1-app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.cell
+    ports:
+      - "9001:9000"
+    environment:
+      CELL_ID: "cell-1"
+      APP_VERSION: "${APP_VERSION_1:-v1}"
+      CELL_FAIL: "${CELL_FAIL_1:-false}"
+      DATABASE_URL: "postgres://app:app@cell1-db:5432/cell1?sslmode=disable"
+      PORT: "9000"
+    depends_on:
+      cell1-db:
+        condition: service_healthy
+
+  cell1-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: cell1
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d cell1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - cell1-db-data:/var/lib/postgresql/data
+
+  # ── Cell 2 ────────────────────────────────────────────────────────────────
+  cell2-app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.cell
+    ports:
+      - "9002:9000"
+    environment:
+      CELL_ID: "cell-2"
+      APP_VERSION: "${APP_VERSION_2:-v1}"
+      CELL_FAIL: "${CELL_FAIL_2:-false}"
+      DATABASE_URL: "postgres://app:app@cell2-db:5432/cell2?sslmode=disable"
+      PORT: "9000"
+    depends_on:
+      cell2-db:
+        condition: service_healthy
+
+  cell2-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: cell2
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d cell2"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - cell2-db-data:/var/lib/postgresql/data
+
+  # ── Cell 3 ────────────────────────────────────────────────────────────────
+  cell3-app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.cell
+    ports:
+      - "9003:9000"
+    environment:
+      CELL_ID: "cell-3"
+      APP_VERSION: "${APP_VERSION_3:-v1}"
+      CELL_FAIL: "${CELL_FAIL_3:-false}"
+      DATABASE_URL: "postgres://app:app@cell3-db:5432/cell3?sslmode=disable"
+      PORT: "9000"
+    depends_on:
+      cell3-db:
+        condition: service_healthy
+
+  cell3-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: cell3
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d cell3"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - cell3-db-data:/var/lib/postgresql/data
+
+volumes:
+  cell1-db-data:
+  cell2-db-data:
+  cell3-db-data:
